@@ -50,8 +50,34 @@ client.once('clientReady', async () => {
     body.push(command.data.toJSON());
   }
   const rest = new REST().setToken(token);
-  await rest.put(Routes.applicationCommands(client.user.id), { body });
-  console.log('Slash commands registered.');
+  const names = body.map(c => c.name).join(', ');
+  const guildId =
+    process.env.DISCORD_GUILD_ID ||
+    process.env.GUILD_ID ||
+    process.env.RAILWAY_GUILD_ID;
+
+  try {
+    await rest.put(Routes.applicationCommands(client.user.id), { body });
+    console.log(
+      `[commands] Registered globally (${body.length}): ${names}. ` +
+        'قد يستغرق ظهورها في كل السيرفرات حتى ~1 ساعة.'
+    );
+    if (guildId) {
+      await rest.put(
+        Routes.applicationGuildCommands(client.user.id, guildId),
+        { body }
+      );
+      console.log(
+        `[commands] Registered for guild ${guildId} — الأوامر تظهر هنا فوراً (بدون انتظار).`
+      );
+    } else {
+      console.log(
+        '[commands] Tip: أضف DISCORD_GUILD_ID في Railway (معرّف السيرفر) لتسجيل أوامر فورية في سيرفرك.'
+      );
+    }
+  } catch (err) {
+    console.error('[commands] فشل تسجيل slash commands:', err);
+  }
 });
 
 client.on('interactionCreate', async interaction => {
