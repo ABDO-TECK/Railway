@@ -30,7 +30,9 @@ module.exports = {
       return interaction.editReply({ content: 'تعذّر تحميل الملف.' });
     }
     const buffer = Buffer.from(await response.arrayBuffer());
-    const { name } = soundLib.addSound(interaction.user.id, buffer, '');
+    const { name } = soundLib.addSound(interaction.user.id, buffer, '', {
+      activate: true
+    });
 
     const who =
       interaction.member?.displayName ??

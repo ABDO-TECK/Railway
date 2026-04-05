@@ -12,7 +12,7 @@ module.exports = {
     .addSubcommand(sub =>
       sub
         .setName('add')
-        .setDescription('إضافة صوت MP3 للمكتبة (يُفعَّل تلقائياً)')
+        .setDescription('إضافة صوت للمكتبة فقط (بدون تفعيل — استخدم select)')
         .addAttachmentOption(o =>
           o.setName('file').setDescription('ملف MP3').setRequired(true)
         )
@@ -20,6 +20,25 @@ module.exports = {
           o
             .setName('name')
             .setDescription('اسم تعريفي للصوت (اختياري)')
+            .setMaxLength(32)
+        )
+    )
+    .addSubcommand(sub =>
+      sub
+        .setName('rename')
+        .setDescription('تغيير اسم صوت في المكتبة')
+        .addStringOption(o =>
+          o
+            .setName('pick')
+            .setDescription('الصوت')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addStringOption(o =>
+          o
+            .setName('new_name')
+            .setDescription('الاسم الجديد')
+            .setRequired(true)
             .setMaxLength(32)
         )
     )
@@ -57,6 +76,10 @@ module.exports = {
     ),
 
   async autocomplete(interaction) {
+    const sub = interaction.options.getSubcommand();
+    if (sub !== 'remove' && sub !== 'select' && sub !== 'rename') {
+      return interaction.respond([]);
+    }
     const lib = soundLib.loadLibrary(interaction.user.id);
     const items = lib?.items || [];
     const focused = interaction.options.getFocused(true);
@@ -144,9 +167,41 @@ module.exports = {
         return interaction.editReply({ content: 'تعذّر تحميل الملف.' });
       }
       const buf = Buffer.from(await res.arrayBuffer());
-      const { name: savedName } = soundLib.addSound(interaction.user.id, buf, name);
+      const { name: savedName } = soundLib.addSound(interaction.user.id, buf, name, {
+        activate: false
+      });
       return interaction.editReply({
-        content: `تمت الإضافة: **${savedName}** وهو الآن **صوت الدخول المفعّل**.`
+        content:
+          `تمت إضافة **${savedName}** للمكتبة **بدون تفعيل**.\n` +
+          'لتشغيله عند الدخول للروم استخدم `/sound select`.'
+      });
+    }
+
+    if (sub === 'rename') {
+      const pick = interaction.options.getString('pick', true);
+      const newName = interaction.options.getString('new_name', true);
+      if (pick === 'none') {
+        return interaction.reply({
+          content: 'لا توجد أصوات.',
+          flags: MessageFlags.Ephemeral
+        });
+      }
+      const result = soundLib.renameSound(interaction.user.id, pick, newName);
+      if (!result.ok) {
+        const map = {
+          empty: 'مكتبتك فارغة.',
+          notfound: 'لم يُعثر على هذا الصوت.',
+          emptyname: 'الاسم الجديد فارغ.',
+          duplicate: 'يوجد صوت آخر بنفس الاسم.'
+        };
+        return interaction.reply({
+          content: map[result.reason] || 'تعذّر التسمية.',
+          flags: MessageFlags.Ephemeral
+        });
+      }
+      return interaction.reply({
+        content: `تم تغيير الاسم من **${result.oldName}** إلى **${result.newName}**.`,
+        flags: MessageFlags.Ephemeral
       });
     }
 
