@@ -34,7 +34,10 @@ for (const file of eventFiles) {
 
 const token = process.env.DISCORD_TOKEN || config.token;
 if (!token) {
-  console.error('Missing token: set DISCORD_TOKEN or copy config.example.json to config.json');
+  console.error(
+    '[bot] No token found. Add variable DISCORD_TOKEN (your Discord bot token) in Railway: ' +
+      'Project → Variables → New Variable. config.example.json is only a template and is never read at runtime.'
+  );
   process.exit(1);
 }
 
