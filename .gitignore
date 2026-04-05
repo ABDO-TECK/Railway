@@ -1,0 +1,9 @@
+node_modules/
+config.json
+.env
+.env.*
+*.log
+sounds/*.mp3
+sounds/*.wav
+sounds/*.ogg
+.DS_Store
