@@ -3,7 +3,7 @@ const soundLib = require('../lib/soundLibrary');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('setsound')
+    .setName('set sound')
     .setDescription('رفع صوت دخول (يُضاف للمكتبة ويُفعَّل — استخدم /sound للمزيد)')
     .addAttachmentOption(option =>
       option
