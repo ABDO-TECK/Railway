@@ -3,7 +3,6 @@ config.json
 .env
 .env.*
 *.log
-sounds/*.mp3
-sounds/*.wav
-sounds/*.ogg
+sounds/*
+!sounds/.gitkeep
 .DS_Store

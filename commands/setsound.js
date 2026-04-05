@@ -1,13 +1,10 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const soundsDir = path.join(__dirname, '..', 'sounds');
+const soundLib = require('../lib/soundLibrary');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('setsound')
-    .setDescription('Upload your join sound')
+    .setDescription('رفع صوت دخول (يُضاف للمكتبة ويُفعَّل — استخدم /sound للمزيد)')
     .addAttachmentOption(option =>
       option
         .setName('file')
@@ -28,17 +25,12 @@ module.exports = {
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    fs.mkdirSync(soundsDir, { recursive: true });
-
     const response = await fetch(file.url);
     if (!response.ok) {
       return interaction.editReply({ content: 'تعذّر تحميل الملف.' });
     }
-    const buffer = await response.arrayBuffer();
-
-    const userId = interaction.user.id;
-    const outPath = path.join(soundsDir, `${userId}.mp3`);
-    fs.writeFileSync(outPath, Buffer.from(buffer));
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const { name } = soundLib.addSound(interaction.user.id, buffer, '');
 
     const who =
       interaction.member?.displayName ??
@@ -46,8 +38,8 @@ module.exports = {
       interaction.user.username;
     await interaction.editReply({
       content:
-        `تم حفظ صوت الدخول لـ **${who}**.\n` +
-        `عند دخولك أي روم صوتي سيُشغَّل الملف \`${userId}.mp3\`.`
+        `تمت الإضافة لـ **${who}** باسم **${name}** (مفعّل كصوت دخول).\n` +
+        'لإدارة الأصوات: `/sound list` — `/sound select` — `/sound remove`.'
     });
   }
 };

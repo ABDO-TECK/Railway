@@ -1,6 +1,3 @@
-const fs = require('fs');
-const path = require('path');
-const { PermissionFlagsBits } = require('discord.js');
 const {
   joinVoiceChannel,
   createAudioPlayer,
@@ -9,7 +6,7 @@ const {
   VoiceConnectionStatus
 } = require('@discordjs/voice');
 
-const soundsDir = path.join(__dirname, '..', 'sounds');
+const soundLib = require('../lib/soundLibrary');
 
 module.exports = {
   name: 'voiceStateUpdate',
@@ -31,8 +28,8 @@ module.exports = {
     }
     if (user.bot) return;
 
-    const filePath = path.join(soundsDir, `${userId}.mp3`);
-    if (!fs.existsSync(filePath)) return;
+    const filePath = soundLib.getActiveFilePath(userId);
+    if (!filePath) return;
 
     let channel = newState.channel;
     if (!channel) {
