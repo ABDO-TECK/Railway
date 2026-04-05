@@ -32,11 +32,13 @@ for (const file of eventFiles) {
   client.on(event.name, (...args) => event.execute(...args));
 }
 
-const token = process.env.DISCORD_TOKEN || config.token;
+const token =
+  process.env.DISCORD_TOKEN || process.env.BOT_TOKEN || config.token;
 if (!token) {
   console.error(
-    '[bot] No token found. Add variable DISCORD_TOKEN (your Discord bot token) in Railway: ' +
-      'Project → Variables → New Variable. config.example.json is only a template and is never read at runtime.'
+    '[bot] Missing token. In Railway: open your service → Variables → Raw Editor (or Add Variable). ' +
+      'Set name DISCORD_TOKEN and value = your bot token from Discord Developer Portal. Then redeploy. ' +
+      '(Optional alias: BOT_TOKEN.)'
   );
   process.exit(1);
 }
