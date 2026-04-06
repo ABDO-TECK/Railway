@@ -71,8 +71,8 @@ module.exports = {
         pendingTrim.set(interaction.user.id, state);
         return interaction.editReply({
           content:
-            `الملف أطول من **${prepared.maxSeconds}** ث — اضبط البداية والطول بالأزرار ثم **حفظ في المكتبة**.\n` +
-            'يمكنك أيضاً استخدام **`duration_second`** و **`start_second`** في الأمر مباشرة.',
+            `الملف أطول من **${prepared.maxSeconds}** ث — اضبط **البداية** و**الطول** بالأزرار، ثم **▶ معاينة** وأنت في روم صوتي، وبعدها **حفظ في المكتبة**.\n` +
+            'أو أدخل **`duration_second`** و **`start_second`** في الأمر مباشرة.',
           embeds: [embed],
           components
         });
