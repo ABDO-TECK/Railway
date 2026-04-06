@@ -26,6 +26,19 @@ module.exports = {
             .setDescription('اسم تعريفي للصوت (اختياري)')
             .setMaxLength(32)
         )
+        .addNumberOption(o =>
+          o
+            .setName('start_second')
+            .setDescription('بداية المقطع بالثواني (افتراضي 0)')
+            .setMinValue(0)
+        )
+        .addNumberOption(o =>
+          o
+            .setName('duration_second')
+            .setDescription('طول المقطع حتى 15 ث — مطلوب إن كان الملف أطول من 15 ث')
+            .setMinValue(0.1)
+            .setMaxValue(15)
+        )
     )
     .addSubcommand(sub =>
       sub
@@ -171,12 +184,28 @@ module.exports = {
         return interaction.editReply({ content: 'تعذّر تحميل الملف.' });
       }
       const rawBuf = Buffer.from(await res.arrayBuffer());
-      const prepared = audioFrom.prepareJoinSoundBuffer(rawBuf, file.name);
+      const startOpt = interaction.options.getNumber('start_second');
+      const durationOpt = interaction.options.getNumber('duration_second');
+      const prepared = audioFrom.prepareJoinSoundBuffer(rawBuf, file.name, {
+        startSec: startOpt ?? undefined,
+        durationSec: durationOpt ?? undefined
+      });
       if (!prepared.ok) {
+        if (prepared.error === 'needs_segment') {
+          return interaction.editReply({
+            content:
+              `مدة الملف **~${prepared.totalDuration.toFixed(1)}** ثانية (أكثر من **${prepared.maxSeconds}** ث).\n` +
+              'حدّد المقطع يدوياً: **`duration_second`** (حتى 15 ث) واختياريًا **`start_second`** (من أي ثانية تبدأ).'
+          });
+        }
+        if (prepared.error === 'range') {
+          return interaction.editReply({ content: prepared.detail || 'نطاق المقطع غير صالح.' });
+        }
         const msg =
           prepared.error === 'unsupported'
             ? 'صيغة غير مدعومة.'
-            : 'تعذّر استخراج الصوت من الفيديو. تأكد أن الملف يحتوي على مسار صوتي، أو جرّب ملف MP3.';
+            : prepared.detail ||
+              'تعذّر معالجة الملف. جرّب MP3 أو MP4 بصوت واضح.';
         return interaction.editReply({ content: msg });
       }
       const fromMp4 = file.name.toLowerCase().endsWith('.mp4');
@@ -186,12 +215,16 @@ module.exports = {
         name,
         { activate: false }
       );
-      const note = fromMp4 ? '\n(تم استخراج الصوت من الفيديو وحفظه كـ MP3.)' : '';
+      const note = fromMp4 ? '\n(صوت مستخرج من الفيديو وحُفظ كـ MP3.)' : '';
+      const seg =
+        prepared.usedStart > 0 || prepared.usedDuration < prepared.sourceDuration
+          ? `\nالمقطع: من **${prepared.usedStart.toFixed(1)}** ث طول **${prepared.usedDuration.toFixed(1)}** ث (من أصل ~${prepared.sourceDuration.toFixed(1)} ث).`
+          : '';
       return interaction.editReply({
         content:
-          `تمت إضافة **${savedName}** للمكتبة **بدون تفعيل**.${note}\n` +
-          `الحد الأقصى للطول: **${audioFrom.MAX_AUDIO_SECONDS}** ثانية (يُقصّ تلقائياً إن لزم).\n` +
-          'لتشغيله عند الدخول للروم استخدم `/sound select`.'
+          `تمت إضافة **${savedName}** للمكتبة **بدون تفعيل**.${note}${seg}\n` +
+          `الحد الأقصى لطول المقطع المحفوظ: **${audioFrom.MAX_AUDIO_SECONDS}** ثانية.\n` +
+          'لتشغيله عند الدخول للروم: `/sound select`.'
       });
     }
 
