@@ -10,6 +10,8 @@ try {
   /* Railway / الإنتاج: استخدم متغير DISCORD_TOKEN */
 }
 
+const { handleTrimInteraction } = require('./lib/trimSliders');
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
 });
@@ -121,6 +123,27 @@ client.on('interactionCreate', async interaction => {
       }
     }
     return;
+  }
+
+  if (interaction.isButton()) {
+    const id = interaction.customId || '';
+    if (id.startsWith('trim:')) {
+      try {
+        await handleTrimInteraction(interaction);
+      } catch (err) {
+        console.error(err);
+        const payload = {
+          content: 'حدث خطأ أثناء تعديل القص.',
+          flags: MessageFlags.Ephemeral
+        };
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(payload).catch(() => {});
+        } else {
+          await interaction.reply(payload).catch(() => {});
+        }
+      }
+      return;
+    }
   }
 
   if (!interaction.isChatInputCommand()) return;

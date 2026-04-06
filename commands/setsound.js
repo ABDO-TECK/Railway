@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const soundLib = require('../lib/soundLibrary');
 const audioFrom = require('../lib/audioFromAttachment');
+const pendingTrim = require('../lib/pendingTrim');
+const { buildEmbedAndRows } = require('../lib/trimSliders');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -51,10 +53,28 @@ module.exports = {
     });
     if (!prepared.ok) {
       if (prepared.error === 'needs_segment') {
+        const startSec = Math.max(0, startOpt ?? 0);
+        const maxDur = Math.min(
+          audioFrom.MAX_AUDIO_SECONDS,
+          prepared.totalDuration - startSec
+        );
+        const state = {
+          buffer: rawBuf,
+          fileName: file.name,
+          totalDur: prepared.totalDuration,
+          startSec,
+          durationSec: Math.max(0.1, maxDur),
+          mode: 'set-sound',
+          displayName: null
+        };
+        const { embed, components } = buildEmbedAndRows(state);
+        pendingTrim.set(interaction.user.id, state);
         return interaction.editReply({
           content:
-            `مدة الملف **~${prepared.totalDuration.toFixed(1)}** ثانية (أكثر من **${prepared.maxSeconds}** ث).\n` +
-            'حدّد المقطع: **`duration_second`** (حتى 15 ث) واختياريًا **`start_second`**.'
+            `الملف أطول من **${prepared.maxSeconds}** ث — اضبط البداية والطول بالأزرار ثم **حفظ في المكتبة**.\n` +
+            'يمكنك أيضاً استخدام **`duration_second`** و **`start_second`** في الأمر مباشرة.',
+          embeds: [embed],
+          components
         });
       }
       if (prepared.error === 'range') {
