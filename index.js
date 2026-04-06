@@ -1,4 +1,5 @@
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 const { Client, Collection, GatewayIntentBits, MessageFlags, REST, Routes } = require('discord.js');
 
@@ -42,6 +43,27 @@ if (!token) {
   );
   process.exit(1);
 }
+
+/* Railway (وغيرها) يتوقع خدمة تستمع على PORT وإلا يُرسل SIGTERM. بوت ديسكورد لا يفتح منفذ HTTP من تلقاء نفسه. */
+const railPort = process.env.PORT;
+if (railPort) {
+  http
+    .createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('ok');
+    })
+    .listen(Number(railPort), '0.0.0.0', () => {
+      console.log(`[health] HTTP على المنفذ ${railPort} (فحص الصحة / Railway)`);
+    });
+}
+
+process.once('SIGTERM', () => {
+  console.log('[bot] SIGTERM — إغلاق الاتصال…');
+  client
+    .destroy()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(0));
+});
 
 client.once('clientReady', async () => {
   const body = [];
