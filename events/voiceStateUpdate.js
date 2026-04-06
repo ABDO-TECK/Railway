@@ -7,13 +7,13 @@ const {
 } = require('@discordjs/voice');
 
 const soundLib = require('../lib/soundLibrary');
+const joinCooldown = require('../lib/joinSoundCooldown');
 
 module.exports = {
   name: 'voiceStateUpdate',
   async execute(oldState, newState) {
     const prevCh = oldState.channelId ?? null;
     const nextCh = newState.channelId ?? null;
-    // دخول جديد أو انتقال لروم آخر (تجاهل تغيير الميوت/الدفن في نفس الروم)
     if (!nextCh || prevCh === nextCh) return;
 
     const userId = newState.id;
@@ -51,11 +51,17 @@ module.exports = {
       return;
     }
 
+    if (!joinCooldown.tryAcquireJoinSound(newState.guild.id)) {
+      return;
+    }
+
+    const guildId = newState.guild.id;
+
     let connection;
     try {
       connection = joinVoiceChannel({
         channelId: channel.id,
-        guildId: newState.guild.id,
+        guildId,
         adapterCreator: newState.guild.voiceAdapterCreator,
         selfDeaf: true
       });
@@ -63,6 +69,7 @@ module.exports = {
       await entersState(connection, VoiceConnectionStatus.Ready, 25_000);
     } catch (err) {
       console.error('Voice connection failed:', err);
+      joinCooldown.releaseJoinSoundSlot(guildId);
       try {
         connection?.destroy();
       } catch (_) {
@@ -71,24 +78,35 @@ module.exports = {
       return;
     }
 
-    const player = createAudioPlayer();
-    const resource = createAudioResource(filePath);
+    try {
+      const player = createAudioPlayer();
+      const resource = createAudioResource(filePath);
 
-    connection.subscribe(player);
-    player.play(resource);
+      connection.subscribe(player);
+      player.play(resource);
 
-    const cleanup = () => {
+      const cleanup = () => {
+        joinCooldown.markJoinSoundFinished(guildId);
+        try {
+          connection.destroy();
+        } catch (_) {
+          /* ignore */
+        }
+      };
+
+      player.once('idle', cleanup);
+      player.once('error', err => {
+        console.error('Audio player error:', err);
+        cleanup();
+      });
+    } catch (err) {
+      console.error('Voice play failed:', err);
+      joinCooldown.releaseJoinSoundSlot(guildId);
       try {
         connection.destroy();
       } catch (_) {
         /* ignore */
       }
-    };
-
-    player.once('idle', cleanup);
-    player.once('error', err => {
-      console.error('Audio player error:', err);
-      cleanup();
-    });
+    }
   }
 };

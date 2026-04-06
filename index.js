@@ -78,6 +78,14 @@ client.once('clientReady', async () => {
   } catch (err) {
     console.error('[commands] فشل تسجيل slash commands:', err);
   }
+
+  const soundLib = require('./lib/soundLibrary');
+  console.log(`[sounds] Storage: ${soundLib.soundsDir}`);
+  if (!process.env.SOUNDS_DIR) {
+    console.warn(
+      '[sounds] بدون SOUNDS_DIR الملفات على القرص المؤقت — أي redeploy يمسح الأصوات. على Railway: أضف Volume واضبط SOUNDS_DIR (مثل /data/sounds).'
+    );
+  }
 });
 
 client.on('interactionCreate', async interaction => {

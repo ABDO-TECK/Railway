@@ -4,6 +4,7 @@ const {
   EmbedBuilder
 } = require('discord.js');
 const soundLib = require('../lib/soundLibrary');
+const audioFrom = require('../lib/audioFromAttachment');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,7 +15,10 @@ module.exports = {
         .setName('add')
         .setDescription('إضافة صوت للمكتبة فقط (بدون تفعيل — استخدم select)')
         .addAttachmentOption(o =>
-          o.setName('file').setDescription('ملف MP3').setRequired(true)
+          o
+            .setName('file')
+            .setDescription('MP3 أو MP4 (يُستخرج الصوت فقط من الفيديو)')
+            .setRequired(true)
         )
         .addStringOption(o =>
           o
@@ -155,9 +159,9 @@ module.exports = {
     if (sub === 'add') {
       const file = interaction.options.getAttachment('file');
       const name = interaction.options.getString('name');
-      if (!file.name.toLowerCase().endsWith('.mp3')) {
+      if (!audioFrom.isAllowedExtension(file.name)) {
         return interaction.reply({
-          content: 'مسموح بملفات MP3 فقط.',
+          content: 'مسموح بملفات **MP3** أو **MP4** فقط (من MP4 يُستخرج الصوت فقط).',
           flags: MessageFlags.Ephemeral
         });
       }
@@ -166,13 +170,27 @@ module.exports = {
       if (!res.ok) {
         return interaction.editReply({ content: 'تعذّر تحميل الملف.' });
       }
-      const buf = Buffer.from(await res.arrayBuffer());
-      const { name: savedName } = soundLib.addSound(interaction.user.id, buf, name, {
-        activate: false
-      });
+      const rawBuf = Buffer.from(await res.arrayBuffer());
+      const prepared = audioFrom.prepareJoinSoundBuffer(rawBuf, file.name);
+      if (!prepared.ok) {
+        const msg =
+          prepared.error === 'unsupported'
+            ? 'صيغة غير مدعومة.'
+            : 'تعذّر استخراج الصوت من الفيديو. تأكد أن الملف يحتوي على مسار صوتي، أو جرّب ملف MP3.';
+        return interaction.editReply({ content: msg });
+      }
+      const fromMp4 = file.name.toLowerCase().endsWith('.mp4');
+      const { name: savedName } = soundLib.addSound(
+        interaction.user.id,
+        prepared.buffer,
+        name,
+        { activate: false }
+      );
+      const note = fromMp4 ? '\n(تم استخراج الصوت من الفيديو وحفظه كـ MP3.)' : '';
       return interaction.editReply({
         content:
-          `تمت إضافة **${savedName}** للمكتبة **بدون تفعيل**.\n` +
+          `تمت إضافة **${savedName}** للمكتبة **بدون تفعيل**.${note}\n` +
+          `الحد الأقصى للطول: **${audioFrom.MAX_AUDIO_SECONDS}** ثانية (يُقصّ تلقائياً إن لزم).\n` +
           'لتشغيله عند الدخول للروم استخدم `/sound select`.'
       });
     }
