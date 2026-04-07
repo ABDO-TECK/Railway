@@ -105,8 +105,17 @@ client.once('clientReady', async () => {
   }
 
   const soundLib = require('./lib/soundLibrary');
-  const { isAllowlistMode } = require('./lib/soundBackupAccess');
+  const { isAllowlistMode, isBulkBackupConfigured } = require('./lib/soundBackupAccess');
   console.log(`[sounds] Storage: ${soundLib.soundsDir}`);
+  if (isBulkBackupConfigured()) {
+    console.log(
+      '[sound-backup] التصدير/الاستيراد الجماعي (export-all / import-all) مفعّل لـ BOT_OWNER_ID أو BULK_EXPORT_USER_IDS.'
+    );
+  } else {
+    console.log(
+      '[sound-backup] التصدير الجماعي معطّل حتى تضيف BOT_OWNER_ID أو BULK_EXPORT_USER_IDS في المتغيرات.'
+    );
+  }
   if (isAllowlistMode()) {
     console.log(
       '[sound-backup] SOUND_BACKUP_USER_IDS مفعّل — التنفيذ فقط للمعرّفات المذكورة (الأمر قد يظهر حسب إعدادات ديسكورد).'
