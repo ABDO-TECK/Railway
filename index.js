@@ -11,11 +11,7 @@ try {
 }
 
 const { handleTrimInteraction } = require('./lib/trimSliders');
-const {
-  passesCommandChannelGate,
-  isSetupCommand,
-  getLockedChannelId
-} = require('./lib/guildCommandChannel');
+const { passesCommandChannelGate, getLockedChannelId } = require('./lib/guildCommandChannel');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
@@ -129,11 +125,7 @@ client.once('clientReady', async () => {
 
 client.on('interactionCreate', async interaction => {
   if (interaction.isAutocomplete()) {
-    if (
-      interaction.guildId &&
-      interaction.channelId &&
-      !isSetupCommand(interaction.commandName)
-    ) {
+    if (interaction.guildId && interaction.channelId) {
       const allowed = await passesCommandChannelGate(
         interaction.client,
         interaction.guildId,
@@ -193,11 +185,7 @@ client.on('interactionCreate', async interaction => {
 
   if (!interaction.isChatInputCommand()) return;
 
-  if (
-    interaction.guildId &&
-    interaction.channelId &&
-    !isSetupCommand(interaction.commandName)
-  ) {
+  if (interaction.guildId && interaction.channelId) {
     const allowed = await passesCommandChannelGate(
       interaction.client,
       interaction.guildId,

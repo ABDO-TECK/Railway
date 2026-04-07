@@ -105,7 +105,8 @@ module.exports = {
       const ch = await guild.channels.fetch(locked).catch(() => null);
       const mention = ch ? ch.toString() : `<#${locked}>`;
       return interaction.reply({
-        content: `الأوامر مقيدة حالياً بـ ${mention} (وبخيوط هذه القناة).`,
+        content:
+          `الأوامر مقيدة حالياً بـ ${mention} (وبخيوط هذه القناة)، **بما فيها** \`/bot-channel\` (مثل \`clear\` و\`status\`).`,
         flags: MessageFlags.Ephemeral
       });
     }
@@ -131,9 +132,9 @@ module.exports = {
       return interaction.reply({
         content:
           `تم التعيين: أوامر البوت (` +
-            '`/sound`، `/set-sound`، `/sound-backup`' +
+            '`/sound`، `/set-sound`، `/sound-backup`، `/bot-channel`' +
             `) تعمل فقط في ${channel.toString()} **وفي خيوط هذه القناة**.\n` +
-            'أمر الإعداد `/bot-channel` يبقى متاحاً للمسؤولين **من أي قناة**.',
+            'لتغيير الإعداد أو **إلغاء التقييد** (`clear`) استخدم نفس القناة (أو خيطها).',
         flags: MessageFlags.Ephemeral
       });
     }
