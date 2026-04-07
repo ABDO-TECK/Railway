@@ -104,7 +104,17 @@ client.once('clientReady', async () => {
   }
 
   const soundLib = require('./lib/soundLibrary');
+  const { isAllowlistMode } = require('./lib/soundBackupAccess');
   console.log(`[sounds] Storage: ${soundLib.soundsDir}`);
+  if (isAllowlistMode()) {
+    console.log(
+      '[sound-backup] SOUND_BACKUP_USER_IDS مفعّل — التنفيذ فقط للمعرّفات المذكورة (الأمر قد يظهر حسب إعدادات ديسكورد).'
+    );
+  } else {
+    console.log(
+      '[sound-backup] بدون قائمة معرّفات: في السيرفر يُشترط دور **مسؤول**؛ في الخاص أي مستخدم يمكنه النسخ لمكتبته.'
+    );
+  }
   if (!process.env.SOUNDS_DIR) {
     console.warn(
       '[sounds] بدون SOUNDS_DIR الملفات على القرص المؤقت — أي redeploy يمسح الأصوات. على Railway: أضف Volume واضبط SOUNDS_DIR (مثل /data/sounds).'
