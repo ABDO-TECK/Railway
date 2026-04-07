@@ -11,6 +11,11 @@ try {
 }
 
 const { handleTrimInteraction } = require('./lib/trimSliders');
+const {
+  passesCommandChannelGate,
+  isSetupCommand,
+  getLockedChannelId
+} = require('./lib/guildCommandChannel');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
@@ -124,6 +129,20 @@ client.once('clientReady', async () => {
 
 client.on('interactionCreate', async interaction => {
   if (interaction.isAutocomplete()) {
+    if (
+      interaction.guildId &&
+      interaction.channelId &&
+      !isSetupCommand(interaction.commandName)
+    ) {
+      const allowed = await passesCommandChannelGate(
+        interaction.client,
+        interaction.guildId,
+        interaction.channelId
+      );
+      if (!allowed) {
+        return interaction.respond([]);
+      }
+    }
     const command = client.commands.get(interaction.commandName);
     if (command?.autocomplete) {
       try {
@@ -138,6 +157,22 @@ client.on('interactionCreate', async interaction => {
   if (interaction.isButton()) {
     const id = interaction.customId || '';
     if (id.startsWith('trim:')) {
+      if (interaction.guildId && interaction.channelId) {
+        const allowed = await passesCommandChannelGate(
+          interaction.client,
+          interaction.guildId,
+          interaction.channelId
+        );
+        if (!allowed) {
+          const locked = getLockedChannelId(interaction.guildId);
+          return interaction.reply({
+            content: `أزرار القص والمعاينة تعمل فقط في ${
+              locked ? `<#${locked}>` : 'القناة المحددة'
+            } (وفي خيوطها).`,
+            flags: MessageFlags.Ephemeral
+          });
+        }
+      }
       try {
         await handleTrimInteraction(interaction);
       } catch (err) {
@@ -157,6 +192,28 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (!interaction.isChatInputCommand()) return;
+
+  if (
+    interaction.guildId &&
+    interaction.channelId &&
+    !isSetupCommand(interaction.commandName)
+  ) {
+    const allowed = await passesCommandChannelGate(
+      interaction.client,
+      interaction.guildId,
+      interaction.channelId
+    );
+    if (!allowed) {
+      const locked = getLockedChannelId(interaction.guildId);
+      return interaction.reply({
+        content: `أوامر البوت مسموحة فقط في ${
+          locked ? `<#${locked}>` : 'القناة المحددة'
+        } (وفي **خيوط** تلك القناة).`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+  }
+
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
   try {
