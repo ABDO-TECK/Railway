@@ -1,15 +1,10 @@
 const {
   SlashCommandBuilder,
-  PermissionFlagsBits,
   MessageFlags,
   AttachmentBuilder
 } = require('discord.js');
 const soundLib = require('../lib/soundLibrary');
-const {
-  canUseSoundBackup,
-  isAllowlistMode,
-  canBulkBackup
-} = require('../lib/soundBackupAccess');
+const { canBulkBackup } = require('../lib/soundBackupAccess');
 
 let builder = new SlashCommandBuilder()
   .setName('sound-backup')
@@ -72,10 +67,6 @@ let builder = new SlashCommandBuilder()
       )
   );
 
-if (!isAllowlistMode()) {
-  builder = builder.setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
-}
-
 module.exports = {
   data: builder,
   async execute(interaction) {
@@ -86,7 +77,7 @@ module.exports = {
       if (!canBulkBackup(interaction)) {
         return interaction.reply({
           content:
-            '**التصدير/الاستيراد الجماعي** للمطوّر فقط.\n\n' +
+            '**التصدير/الاستيراد الجماعي** (export-all / import-all) للمطوّر فقط.\n\n' +
             'عيّن في بيئة البوت أحد الخيارين:\n' +
             '• **`BOT_OWNER_ID`** = معرّف حسابك في ديسكورد\n' +
             '• أو **`BULK_EXPORT_USER_IDS`** = معرّفات مفصولة بفواصل لمن يُسمح له\n\n' +
@@ -94,15 +85,6 @@ module.exports = {
           flags: MessageFlags.Ephemeral
         });
       }
-    } else if (!canUseSoundBackup(interaction)) {
-      return interaction.reply({
-        content:
-          'لا يمكنك استخدام **/sound-backup** هنا.\n\n' +
-          '• إذا كان المالك عيّن **SOUND_BACKUP_USER_IDS**: يجب أن يكون **معرّفك** في تلك القائمة.\n' +
-          '• وإلا: تحتاج صلاحية **مسؤول (Administrator)** في السيرفر.\n' +
-          '• أو نفّذ الأمر من **رسالة خاصة** مع البوت (تصدير/استيراد مكتبتك فقط).',
-        flags: MessageFlags.Ephemeral
-      });
     }
 
     if (sub === 'export') {

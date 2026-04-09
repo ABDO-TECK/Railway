@@ -105,8 +105,11 @@ client.once('clientReady', async () => {
   }
 
   const soundLib = require('./lib/soundLibrary');
-  const { isAllowlistMode, isBulkBackupConfigured } = require('./lib/soundBackupAccess');
+  const { isBulkBackupConfigured } = require('./lib/soundBackupAccess');
   console.log(`[sounds] Storage: ${soundLib.soundsDir}`);
+  console.log(
+    '[sound-backup] التصدير/الاستيراد الشخصي (export / import) متاح لجميع المستخدمين في الخاص أو السيرفر.'
+  );
   if (isBulkBackupConfigured()) {
     console.log(
       '[sound-backup] التصدير/الاستيراد الجماعي (export-all / import-all) مفعّل لـ BOT_OWNER_ID أو BULK_EXPORT_USER_IDS.'
@@ -114,15 +117,6 @@ client.once('clientReady', async () => {
   } else {
     console.log(
       '[sound-backup] التصدير الجماعي معطّل حتى تضيف BOT_OWNER_ID أو BULK_EXPORT_USER_IDS في المتغيرات.'
-    );
-  }
-  if (isAllowlistMode()) {
-    console.log(
-      '[sound-backup] SOUND_BACKUP_USER_IDS مفعّل — التنفيذ فقط للمعرّفات المذكورة (الأمر قد يظهر حسب إعدادات ديسكورد).'
-    );
-  } else {
-    console.log(
-      '[sound-backup] بدون قائمة معرّفات: في السيرفر يُشترط دور **مسؤول**؛ في الخاص أي مستخدم يمكنه النسخ لمكتبته.'
     );
   }
   if (!process.env.SOUNDS_DIR) {
