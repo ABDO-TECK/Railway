@@ -28,6 +28,8 @@ module.exports = {
     }
     if (user.bot) return;
 
+    if (!soundLib.isJoinSoundEnabled(userId)) return;
+
     const filePath = soundLib.getActiveFilePath(userId);
     if (!filePath) return;
 

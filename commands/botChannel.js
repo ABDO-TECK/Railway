@@ -98,7 +98,7 @@ module.exports = {
       if (!locked) {
         return interaction.reply({
           content:
-            '**التقييد معطّل** — أوامر البوت (`/sound`، `/set-sound`، `/sound-backup`، …) تعمل من **أي قناة**.',
+            '**التقييد معطّل** — أوامر البوت (`/sound`، `/set-sound`، `/join-sound`، `/sound-backup`، …) تعمل من **أي قناة**.',
           flags: MessageFlags.Ephemeral
         });
       }
@@ -132,7 +132,7 @@ module.exports = {
       return interaction.reply({
         content:
           `تم التعيين: أوامر البوت (` +
-            '`/sound`، `/set-sound`، `/sound-backup`، `/bot-channel`' +
+            '`/sound`، `/set-sound`، `/join-sound`، `/sound-backup`، `/bot-channel`' +
             `) تعمل فقط في ${channel.toString()} **وفي خيوط هذه القناة**.\n` +
             'لتغيير الإعداد أو **إلغاء التقييد** (`clear`) استخدم نفس القناة (أو خيطها).',
         flags: MessageFlags.Ephemeral
